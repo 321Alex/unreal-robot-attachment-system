@@ -20,15 +20,13 @@ void UDragComponent::BeginDrag(APlayerController* PC)
 
 	DragController = PC;
 
-	// Cache the camera-to-object distance at drag start so we can keep the object
-	// "locked" to the mouse ray at a stable depth (prevents it from flying toward/away from the camera).
+	// Cache the camera-to-object distance at drag start so we can keep the object locked to the mouse ray at a stable depth 
 	FVector CamLoc;
 	FRotator CamRot;
 	PC->GetPlayerViewPoint(CamLoc, CamRot);
 
 	InitialDragDistance = FVector::Dist(CamLoc, Owner->GetActorLocation());
 
-	// Optional: clamp distance so dragging can't go absurdly close/far due to set up issues.
 	InitialDragDistance = FMath::Clamp(InitialDragDistance, MinDragDistance, MaxDragDistance);
 
 	bDragging = true;

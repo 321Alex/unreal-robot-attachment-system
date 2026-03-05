@@ -190,7 +190,7 @@ void ARobotSpectatorPawn::EndDragAndResumeHover(bool bClearDraggedHighlight)
 
 void ARobotSpectatorPawn::StartHighlightTimer()
 {
-	// Avoid re-arming if already running.
+	// Avoid activating if already running
 	if (GetWorldTimerManager().IsTimerActive(HighlightTimerHandle))
 	{
 		return;
@@ -230,12 +230,12 @@ void ARobotSpectatorPawn::SetCurrentTarget(AActor* NewTarget)
 		return;
 	}
 
-	// Turn off highlight on old target.
+	// Turn off the highlight on the old target.
 	SetHighlightIfPresent(CurrentTarget, false);
 
 	CurrentTarget = NewTarget;
 
-	// Turn on highlight on new target.
+	// Turn on the highlight on a new target.
 	SetHighlightIfPresent(CurrentTarget, true);
 
 	// Update UI

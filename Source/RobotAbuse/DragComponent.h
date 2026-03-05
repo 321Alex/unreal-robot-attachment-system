@@ -19,7 +19,7 @@ public:
 
 protected:
 	// Component owns drag updates while dragging (tick enabled only during drag).
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 private:
 	void ApplyWorldPosition(const FVector& WorldPos, float DeltaTime);
