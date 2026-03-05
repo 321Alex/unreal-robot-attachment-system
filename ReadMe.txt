@@ -7,11 +7,11 @@ The project focuses on clean gameplay architecture using components, interfaces,
 
 ---
 
-## Key Systems Demonstrated
+## Key Gameplay Architecture
 
 - Component-driven gameplay architecture
 - Interface-based interaction system (IInteractable)
-- Strategy pattern for highlighting
+- Strategy pattern–based highlight system
 - Modular robot attachment system
 - Unreal Automation Tests
 
