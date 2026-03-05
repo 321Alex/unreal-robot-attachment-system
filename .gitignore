@@ -1,0 +1,36 @@
+# Visual Studio
+.vs/
+*.sln
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.VC.db
+
+# Rider
+.idea/
+
+# Unreal Engine generated files
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+
+# Unreal cache / database files
+*.opensdf
+*.opendb
+*.sdf
+
+# Mac / Linux
+.DS_Store
+
+# Logs / temp
+*.log
+*.tmp
+
+# Xcode
+*.xcodeproj
+*.xcworkspace
+
+# Unreal project file
+!*.uproject
