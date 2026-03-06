@@ -1,4 +1,6 @@
 ﻿#include "RobotTorso.h"
+
+#include "RobotInteractionComponent.h"
 #include "Components/StaticMeshComponent.h"
 
 // The torso is the root actor for the robot assembly. 
@@ -14,9 +16,15 @@ ARobotTorso::ARobotTorso()
 	RootMesh->SetSimulatePhysics(false);
 }
 
-void ARobotTorso::OnInteract_Implementation()
+void ARobotTorso::OnInteract_Implementation(AActor* InteractingActor)
 {
-	// Intentionally empty.
-	// The torso participates in the interaction system, so it can be detected
-	// by the controller, but currently no additional behavior is required.
+	URobotInteractionComponent* InteractionComp =
+	InteractingActor->FindComponentByClass<URobotInteractionComponent>();
+
+	if (!InteractionComp)
+	{
+		return;
+	}
+	
+	InteractionComp->BeginDraggingActor(this);
 }

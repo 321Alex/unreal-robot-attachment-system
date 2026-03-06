@@ -19,7 +19,7 @@ public:
 	ARobotTorso();
 
 	// IInteractable
-	virtual void OnInteract_Implementation() override;
+	virtual void OnInteract_Implementation(AActor* InteractingActor) override;
 
 protected:
 	// Main mesh for the robot torso (acts as the root component).

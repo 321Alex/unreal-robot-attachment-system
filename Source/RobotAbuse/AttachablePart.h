@@ -26,11 +26,11 @@ class ROBOTABUSE_API AAttachablePart : public AActor, public IInteractable
 public:
 	AAttachablePart();
 	
-	virtual void OnInteract_Implementation() override;
+	virtual void OnInteract_Implementation(AActor* InteractingActor) override;
 
 	// Player actions
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
-	void PickUp();
+	void PickUp(AActor* InteractingActor);
 
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
 	void Drop();

@@ -20,14 +20,18 @@ void URobotInteractionComponent::BeginPlay()
 	Super::BeginPlay();
 
 	APawn* OwnerPawn = Cast<APawn>(GetOwner());
-	CachedPC = Cast<APlayerController>(OwnerPawn->GetController());
+	CachedPC = OwnerPawn ? Cast<APlayerController>(OwnerPawn->GetController()) : nullptr;
 
-	// Use a timer instead of Tick for hover checks to reduce per-frame work.
 	StartHighlightTimer();
 }
 
 void URobotInteractionComponent::OnMouseClick()
 {
+	if (!CachedPC)
+	{
+		return;
+	}
+
 	FHitResult Hit;
 	CachedPC->GetHitResultUnderCursor(ECC_Visibility, false, Hit);
 
@@ -38,7 +42,7 @@ void URobotInteractionComponent::OnMouseClick()
 		return;
 	}
 
-	// Not dragging -> try to interact/pick up whatever we clicked.
+	// Not dragging -> tell the clicked actor it was interacted with.
 	if (AActor* HitActor = Hit.GetActor())
 	{
 		HandleNewClick(HitActor);
@@ -52,7 +56,6 @@ void URobotInteractionComponent::HandleNewClick(AActor* Actor)
 		return;
 	}
 
-	// Only interact with interactable actors.
 	if (!Actor->Implements<UInteractable>())
 	{
 		return;
@@ -62,31 +65,40 @@ void URobotInteractionComponent::HandleNewClick(AActor* Actor)
 	StopHighlightTimer();
 	SetCurrentTarget(nullptr);
 
-	// Allow the interactable to update its own state first.
-	IInteractable::Execute_OnInteract(Actor);
+	// Let the clicked actor decide what interaction means.
+	IInteractable::Execute_OnInteract(Actor, GetOwner());
 
-	// Start dragging if the actor has a drag component.
-	if (UDragComponent* DragComp = Actor->FindComponentByClass<UDragComponent>())
+	// If interaction did not start a drag session, resume hover highlighting.
+	if (!DraggedActor)
 	{
-		DraggedActor = Actor;
+		StartHighlightTimer();
+	}
+}
 
-		DragComp->BeginDrag(CachedPC);
-
-		SetHighlightIfPresent(Actor, true);
-
-		// UI event reporting the state of the targeted part.
-		if (AAttachablePart* Part = Cast<AAttachablePart>(Actor))
-		{
-			OnPartStateChanged.Broadcast(Part);
-		}
-
+void URobotInteractionComponent::BeginDraggingActor(AActor* Actor)
+{
+	if (!Actor || DraggedActor || !CachedPC)
+	{
 		return;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("%s is interactable but has no DragComponent"), *GetNameSafe(Actor));
+	UDragComponent* DragComp = Actor->FindComponentByClass<UDragComponent>();
+	if (!DragComp)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s requested dragging but has no DragComponent"), *GetNameSafe(Actor));
+		return;
+	}
 
-	// Resume hover highlights since we didn't start dragging.
-	StartHighlightTimer();
+	DraggedActor = Actor;
+
+	DragComp->BeginDrag(CachedPC);
+
+	SetHighlightIfPresent(Actor, true);
+
+	if (AAttachablePart* Part = Cast<AAttachablePart>(Actor))
+	{
+		OnPartStateChanged.Broadcast(Part);
+	}
 }
 
 void URobotInteractionComponent::HandleDropOrAttach(const FHitResult& Hit)
@@ -116,12 +128,10 @@ void URobotInteractionComponent::HandleDropOrAttach(const FHitResult& Hit)
 
 			SetHighlightIfPresent(DraggedActor, false);
 
-			// Update UI
 			OnPartStateChanged.Broadcast(DraggedPart);
 
 			DraggedActor = nullptr;
 
-			// Resume hover highlights
 			StartHighlightTimer();
 			return;
 		}
@@ -166,8 +176,6 @@ void URobotInteractionComponent::EndDragAndResumeHover(bool bClearDraggedHighlig
 	StartHighlightTimer();
 }
 
-// ===== Hover highlight timer =====
-
 void URobotInteractionComponent::StartHighlightTimer()
 {
 	if (!GetWorld())
@@ -177,7 +185,6 @@ void URobotInteractionComponent::StartHighlightTimer()
 
 	FTimerManager& TM = GetWorld()->GetTimerManager();
 
-	// Avoid activating if already running.
 	if (TM.IsTimerActive(HighlightTimerHandle))
 	{
 		return;
@@ -194,11 +201,6 @@ void URobotInteractionComponent::StartHighlightTimer()
 
 void URobotInteractionComponent::StopHighlightTimer()
 {
-	if (!GetWorld())
-	{
-		return;
-	}
-
 	FTimerManager& TM = GetWorld()->GetTimerManager();
 
 	if (!TM.IsTimerActive(HighlightTimerHandle))
@@ -208,7 +210,6 @@ void URobotInteractionComponent::StopHighlightTimer()
 
 	TM.ClearTimer(HighlightTimerHandle);
 
-	// Clear any current highlight when stopping.
 	if (CurrentTarget)
 	{
 		SetHighlightIfPresent(CurrentTarget, false);
@@ -224,15 +225,12 @@ void URobotInteractionComponent::SetCurrentTarget(AActor* NewTarget)
 		return;
 	}
 
-	// Turn off the highlight on the old target.
 	SetHighlightIfPresent(CurrentTarget, false);
 
 	CurrentTarget = NewTarget;
 
-	// Turn on the highlight on the new target.
 	SetHighlightIfPresent(CurrentTarget, true);
 
-	// Update UI
 	if (AAttachablePart* Part = Cast<AAttachablePart>(CurrentTarget))
 	{
 		OnPartStateChanged.Broadcast(Part);
@@ -254,8 +252,6 @@ void URobotInteractionComponent::UpdateCurrentTarget()
 	CachedPC->GetHitResultUnderCursor(ECC_Visibility, false, Hit);
 
 	AActor* HitActor = Hit.GetActor();
-
-	// Only hover things that can be interacted with.
 	AActor* NewTarget = (HitActor && HitActor->Implements<UInteractable>()) ? HitActor : nullptr;
 
 	SetCurrentTarget(NewTarget);

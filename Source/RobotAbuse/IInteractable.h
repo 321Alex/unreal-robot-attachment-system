@@ -20,6 +20,6 @@ class ROBOTABUSE_API IInteractable
 	GENERATED_BODY()
 
 public:
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category="Interaction")
-	void OnInteract();
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void OnInteract(AActor* InteractingActor);
 };

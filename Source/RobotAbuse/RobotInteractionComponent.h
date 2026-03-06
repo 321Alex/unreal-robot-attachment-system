@@ -4,15 +4,11 @@
 #include "Components/ActorComponent.h"
 #include "RobotInteractionComponent.generated.h"
 
-class AActor;
 class AAttachablePart;
 class APlayerController;
-class UUserWidget;
-struct FHitResult;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPartStateChanged, AAttachablePart*, Part);
 
-//Orchestrates click interaction + hover highlight + drag/attach flow. 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class ROBOTABUSE_API URobotInteractionComponent : public UActorComponent
 {
@@ -21,34 +17,33 @@ class ROBOTABUSE_API URobotInteractionComponent : public UActorComponent
 public:
 	URobotInteractionComponent();
 
-	UPROPERTY(BlueprintAssignable, Category="UI Events")
-	FOnPartStateChanged OnPartStateChanged;
-
-	UFUNCTION()
-	void OnMouseClick();
-
 protected:
 	virtual void BeginPlay() override;
 
-	UPROPERTY(EditDefaultsOnly, Category="Hover")
-	float HoverPollInterval = 0.1f;
+public:
+	UFUNCTION(BlueprintCallable, Category = "Interaction")
+	void OnMouseClick();
+
+	UFUNCTION(BlueprintCallable, Category = "Interaction")
+	void BeginDraggingActor(AActor* Actor);
+
+	UFUNCTION(BlueprintCallable, Category = "Interaction")
+	void EndDragAndResumeHover(bool bClearDraggedHighlight = true);
+
+	UPROPERTY(BlueprintAssignable, Category = "Interaction")
+	FOnPartStateChanged OnPartStateChanged;
 
 private:
 	void HandleNewClick(AActor* Actor);
 	void HandleDropOrAttach(const FHitResult& Hit);
 
-	void EndDragAndResumeHover(bool bClearDraggedHighlight);
-
-	void UpdateCurrentTarget();
-	void SetCurrentTarget(AActor* NewTarget);
-
 	void StartHighlightTimer();
 	void StopHighlightTimer();
-
+	void UpdateCurrentTarget();
+	void SetCurrentTarget(AActor* NewTarget);
 	void SetHighlightIfPresent(AActor* Actor, bool bOn);
 
-	FTimerHandle HighlightTimerHandle;
-
+private:
 	UPROPERTY()
 	TObjectPtr<APlayerController> CachedPC = nullptr;
 
@@ -57,4 +52,9 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<AActor> CurrentTarget = nullptr;
+
+	FTimerHandle HighlightTimerHandle;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Interaction")
+	float HoverPollInterval = 0.03f;
 };
