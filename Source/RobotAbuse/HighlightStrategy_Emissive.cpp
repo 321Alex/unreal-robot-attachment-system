@@ -15,13 +15,13 @@
 
 bool UHighlightStrategy_Emissive::MaterialHasScalarParam(UMaterialInterface* Mat, FName ParamName)
 {
-	// Avoid creating dynamic instances for materials that cannot be driven by our emissive scalar parameter.
 	if (!Mat) return false;
 
 	TArray<FMaterialParameterInfo> Infos;
 	TArray<FGuid> Ids;
 	Mat->GetAllScalarParameterInfo(Infos, Ids);
-
+	
+	// Avoid creating dynamic instances for materials that cannot be driven by our emissive scalar parameter.
 	for (const FMaterialParameterInfo& Info : Infos)
 	{
 		if (Info.Name == ParamName)
