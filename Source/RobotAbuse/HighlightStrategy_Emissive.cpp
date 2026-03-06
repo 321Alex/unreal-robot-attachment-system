@@ -1,5 +1,6 @@
 ﻿#include "HighlightStrategy_Emissive.h"
 
+#include "AttachablePart.h"
 #include "HighlightComponent.h"
 #include "Components/ChildActorComponent.h"
 #include "Components/MeshComponent.h"
@@ -34,8 +35,7 @@ bool UHighlightStrategy_Emissive::MaterialHasScalarParam(UMaterialInterface* Mat
 
 void UHighlightStrategy_Emissive::Setup(AActor* Target)
 {
-	// Clear any previous references. In this demo we don't restore original materials;
-	// a production system may cache and restore originals on teardown.
+	// Clear any previous references.
 	DynamicMaterials.Empty();
 	
 	TArray<UStaticMeshComponent*> MeshComponents;
@@ -58,7 +58,6 @@ void UHighlightStrategy_Emissive::Setup(AActor* Target)
 			}
 
 			// Create a dynamic material instance so we can adjust emissive intensity at runtime.
-			// Using the mesh as the Outer ties the instance lifetime to the component.
 			UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(BaseMat, Mesh);
 			if (!DynMat) continue;
 
@@ -101,8 +100,6 @@ static void CollectHighlightDescendants_Internal(AActor* Actor, TArray<AActor*>&
 static void GetHighlightChildActors(AActor* Root, TArray<AActor*>& OutActors)
 {
 	OutActors.Reset();
-	if (!Root) return;
-
 	CollectHighlightDescendants_Internal(Root, OutActors);
 
 	// Remove the root because this strategy already highlights the root actor directly.
@@ -121,6 +118,13 @@ void UHighlightStrategy_Emissive::Apply(AActor* Target)
 	for (AActor* Child : Descendants)
 	{
 		if (!Child) continue;
+		
+		// Only highlight parts that are actually attached (gameplay state)
+		if (AAttachablePart* Part = Cast<AAttachablePart>(Child))
+		{
+			if (!Part->IsAttached())
+				continue;
+		}
 
 		// Only toggle highlight on actors that participate in the highlight system.
 		if (UHighlightComponent* Highlight = Child->FindComponentByClass<UHighlightComponent>())
@@ -142,6 +146,12 @@ void UHighlightStrategy_Emissive::Clear(AActor* Target)
 	for (AActor* Child : ChildActors)
 	{
 		if (!Child) continue;
+		
+		if (AAttachablePart* Part = Cast<AAttachablePart>(Child))
+		{
+			if (!Part->IsAttached())
+				continue;
+		}
 
 		if (UHighlightComponent* Highlight = Child->FindComponentByClass<UHighlightComponent>())
 		{
@@ -155,7 +165,6 @@ void UHighlightStrategy_Emissive::SetEmissive(float Value)
 	// Drive the emissive scalar parameter on all cached dynamic material instances.
 	for (UMaterialInstanceDynamic* Mat : DynamicMaterials)
 	{
-		if (!Mat) continue;
 		Mat->SetScalarParameterValue(EmissiveParameterName, Value);
 	}
 }
