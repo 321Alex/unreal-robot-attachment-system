@@ -14,7 +14,6 @@ UDragComponent::UDragComponent()
 void UDragComponent::BeginDrag(APlayerController* PC)
 {
 	check(PC);
-
 	AActor* Owner = GetOwner();
 	check(Owner);
 
