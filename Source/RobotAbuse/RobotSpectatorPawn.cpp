@@ -1,22 +1,32 @@
 ﻿#include "RobotSpectatorPawn.h"
-#include "Components/InputComponent.h"
-#include "RobotInteractionComponent.h"
 
-ARobotSpectatorPawn::ARobotSpectatorPawn()
+#include "RobotInteractionComponent.h"
+#include "Components/InputComponent.h"
+#include "GameFramework/PlayerController.h"
+
+void ARobotSpectatorPawn::BeginPlay()
 {
-    PrimaryActorTick.bCanEverTick = false;
+    Super::BeginPlay();
+    
+    if (APlayerController* PC = Cast<APlayerController>(GetController()))
+    {
+        PC->bShowMouseCursor = true;
+        PC->bEnableClickEvents = true;
+        PC->bEnableMouseOverEvents = true;
+    }
 }
 
 void ARobotSpectatorPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
     Super::SetupPlayerInputComponent(PlayerInputComponent);
     check(PlayerInputComponent);
-    
+
     Interaction = FindComponentByClass<URobotInteractionComponent>();
     if (!ensureMsgf(Interaction, TEXT("RobotSpectatorPawn requires a RobotInteractionComponent (add it in the Blueprint).")))
     {
         return;
     }
+
     PlayerInputComponent->BindAction(
         "MouseClick",
         IE_Pressed,
@@ -24,3 +34,4 @@ void ARobotSpectatorPawn::SetupPlayerInputComponent(UInputComponent* PlayerInput
         &URobotInteractionComponent::OnMouseClick
     );
 }
+

@@ -5,16 +5,20 @@
 #include "RobotSpectatorPawn.generated.h"
 
 class URobotInteractionComponent;
+class UInputComponent;
 
 UCLASS()
 class ROBOTABUSE_API ARobotSpectatorPawn : public ASpectatorPawn
 {
     GENERATED_BODY()
-    
-    UPROPERTY(Transient)
-    TObjectPtr<URobotInteractionComponent> Interaction = nullptr;
 
 public:
-    ARobotSpectatorPawn();
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+
+protected:
+    virtual void BeginPlay() override;
+
+private:
+    UPROPERTY(Transient)
+    TObjectPtr<URobotInteractionComponent> Interaction = nullptr;
 };

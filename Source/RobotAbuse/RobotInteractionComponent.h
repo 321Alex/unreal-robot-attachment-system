@@ -21,25 +21,24 @@ class ROBOTABUSE_API URobotInteractionComponent : public UActorComponent
 public:
 	URobotInteractionComponent();
 
-	// UI can listen for selection/drag state changes (null when no part is selected).
 	UPROPERTY(BlueprintAssignable, Category="UI Events")
 	FOnPartStateChanged OnPartStateChanged;
 
-	// Call from Pawn input binding.
 	UFUNCTION()
 	void OnMouseClick();
 
 protected:
 	virtual void BeginPlay() override;
 
-	// ===== Interaction =====
+	UPROPERTY(EditDefaultsOnly, Category="Hover")
+	float HoverPollInterval = 0.1f;
+
+private:
 	void HandleNewClick(AActor* Actor);
 	void HandleDropOrAttach(const FHitResult& Hit);
 
-	// ===== Drag lifecycle =====
 	void EndDragAndResumeHover(bool bClearDraggedHighlight);
 
-	// ===== Hover / Highlight =====
 	void UpdateCurrentTarget();
 	void SetCurrentTarget(AActor* NewTarget);
 
@@ -48,20 +47,6 @@ protected:
 
 	void SetHighlightIfPresent(AActor* Actor, bool bOn);
 
-	// ===== UI =====
-	void CreateArmStatusWidget();
-
-protected:
-	// Widget to display the current selected part status.
-	UPROPERTY(EditDefaultsOnly, Category="UI")
-	TSubclassOf<UUserWidget> ArmStatusWidgetClass;
-
-	// How often to poll under-cursor hit tests for hover highlight.
-	UPROPERTY(EditDefaultsOnly, Category="Hover")
-	float HoverPollInterval = 0.1f;
-
-private:
-	// Timer for hover detection (used instead of Tick to reduce per-frame work).
 	FTimerHandle HighlightTimerHandle;
 
 	UPROPERTY()

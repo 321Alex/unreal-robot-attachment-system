@@ -6,7 +6,6 @@
 #include "HighlightComponent.h"
 #include "IInteractable.h"
 
-#include "Blueprint/UserWidget.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "TimerManager.h"
@@ -22,13 +21,6 @@ void URobotInteractionComponent::BeginPlay()
 
 	APawn* OwnerPawn = Cast<APawn>(GetOwner());
 	CachedPC = Cast<APlayerController>(OwnerPawn->GetController());
-
-	// Mouse settings for selecting/interacting.
-	CachedPC->bShowMouseCursor = true;
-	CachedPC->bEnableClickEvents = true;
-	CachedPC->bEnableMouseOverEvents = true;
-
-	CreateArmStatusWidget();
 
 	// Use a timer instead of Tick for hover checks to reduce per-frame work.
 	StartHighlightTimer();
@@ -279,21 +271,5 @@ void URobotInteractionComponent::SetHighlightIfPresent(AActor* Actor, bool bOn)
 	if (UHighlightComponent* Highlight = Actor->FindComponentByClass<UHighlightComponent>())
 	{
 		Highlight->SetHighlighted(bOn);
-	}
-}
-
-// ===== UI =====
-
-void URobotInteractionComponent::CreateArmStatusWidget()
-{
-	if (!ArmStatusWidgetClass)
-	{
-		return;
-	}
-
-	UUserWidget* Widget = CreateWidget<UUserWidget>(CachedPC, ArmStatusWidgetClass);
-	if (ensure(Widget))
-	{
-		Widget->AddToViewport();
 	}
 }
