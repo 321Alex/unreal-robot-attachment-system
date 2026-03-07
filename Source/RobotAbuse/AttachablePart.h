@@ -26,7 +26,7 @@ class ROBOTABUSE_API AAttachablePart : public AActor, public IInteractable
 public:
 	AAttachablePart();
 
-	virtual void OnInteract_Implementation(AActor* InteractingActor) override;
+	virtual EInteractionOutcome OnInteract_Implementation() override;
 
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
 	void Drop();
@@ -69,7 +69,7 @@ protected:
 	TObjectPtr<UStaticMeshComponent> MeshComponent = nullptr;
 
 private:
-	void PickUp(AActor* InteractingActor);
+	void PickUp();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<AAttachmentPointActor> CurrentAttachmentPoint = nullptr;

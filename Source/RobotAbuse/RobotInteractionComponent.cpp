@@ -66,13 +66,32 @@ void URobotInteractionComponent::HandleNewClick(AActor* Actor)
 	SetCurrentTarget(nullptr);
 
 	// Let the clicked actor decide what interaction means.
-	IInteractable::Execute_OnInteract(Actor, GetOwner());
+	const EInteractionOutcome Outcome = IInteractable::Execute_OnInteract(Actor);
+
+	if (Outcome == EInteractionOutcome::StartDrag)
+	{
+		if (UDragComponent* DragComp = Actor->FindComponentByClass<UDragComponent>())
+		{
+			DraggedActor = Actor;
+			DragComp->BeginDrag(CachedPC);
+			SetHighlightIfPresent(Actor, true);
+
+			if (AAttachablePart* Part = Cast<AAttachablePart>(Actor))
+			{
+				OnPartStateChanged.Broadcast(Part);
+			}
+		}
+		else
+		{
+			ensureMsgf(false, TEXT("%s requested StartDrag but has no DragComponent"), *GetNameSafe(Actor));
+			StartHighlightTimer();
+		}
+
+		return;
+	}
 
 	// If interaction did not start a drag session, resume hover highlighting.
-	if (!DraggedActor)
-	{
-		StartHighlightTimer();
-	}
+	StartHighlightTimer();
 }
 
 void URobotInteractionComponent::BeginDraggingActor(AActor* Actor)

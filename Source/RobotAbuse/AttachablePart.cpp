@@ -20,55 +20,26 @@ AAttachablePart::AAttachablePart()
 	CurrentState = EPartState::DETACHED;
 }
 
-void AAttachablePart::OnInteract_Implementation(AActor* InteractingActor)
+EInteractionOutcome AAttachablePart::OnInteract_Implementation()
 {
-	if (!InteractingActor)
+	if (CurrentState == EPartState::DETACHED)
 	{
-		return;
+		PickUp();
+		return EInteractionOutcome::StartDrag;
 	}
 
-	URobotInteractionComponent* InteractionComp =
-		InteractingActor->FindComponentByClass<URobotInteractionComponent>();
-
-	if (!InteractionComp)
+	if (CurrentState == EPartState::ATTACHED)
 	{
-		return;
-	}
-
-	switch (CurrentState)
-	{
-	case EPartState::DETACHED:
-		PickUp(InteractingActor);
-		break;
-
-	case EPartState::ATTACHED:
 		RequestDetachFromPoint();
-		PickUp(InteractingActor);
-		break;
-
-	default:
-		break;
+		PickUp();
+		return EInteractionOutcome::StartDrag;
 	}
 
-	InteractionComp->BeginDraggingActor(this);
+	return EInteractionOutcome::None;
 }
 
-void AAttachablePart::PickUp(AActor* InteractingActor)
+void AAttachablePart::PickUp()
 {
-	if (!InteractingActor)
-	{
-		return;
-	}
-
-	URobotInteractionComponent* InteractionComp =
-		InteractingActor->FindComponentByClass<URobotInteractionComponent>();
-
-	if (!InteractionComp)
-	{
-		return;
-	}
-
-	InteractionComp->BeginDraggingActor(this);
 	CurrentState = EPartState::HELD;
 }
 

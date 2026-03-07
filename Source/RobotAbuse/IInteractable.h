@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "InteractionOutcome.h"
 #include "UObject/Interface.h"
 #include "IInteractable.generated.h"
 
@@ -20,6 +21,6 @@ class ROBOTABUSE_API IInteractable
 	GENERATED_BODY()
 
 public:
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	void OnInteract(AActor* InteractingActor);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category="Interaction")
+	EInteractionOutcome OnInteract();
 };

@@ -16,15 +16,7 @@ ARobotTorso::ARobotTorso()
 	RootMesh->SetSimulatePhysics(false);
 }
 
-void ARobotTorso::OnInteract_Implementation(AActor* InteractingActor)
+EInteractionOutcome ARobotTorso::OnInteract_Implementation()
 {
-	URobotInteractionComponent* InteractionComp =
-	InteractingActor->FindComponentByClass<URobotInteractionComponent>();
-
-	if (!InteractionComp)
-	{
-		return;
-	}
-	
-	InteractionComp->BeginDraggingActor(this);
+	return EInteractionOutcome::StartDrag;
 }
