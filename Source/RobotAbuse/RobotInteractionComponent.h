@@ -1,12 +1,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "HighlightStrategy.h"
 #include "Components/ActorComponent.h"
 #include "RobotInteractionComponent.generated.h"
 
 class AAttachablePart;
 class APlayerController;
-enum class EHighlightVisualState : uint8;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPartStateChanged, AAttachablePart*, Part);
 
@@ -43,6 +43,9 @@ private:
 	void StopHighlightTimer();
 	void UpdateCurrentTarget();
 	void SetCurrentTarget(AActor* NewTarget);
+	void SetCurrentTarget(AActor* NewTarget, EHighlightVisualState NewState);
+	void ShowInvalidPlacementFeedback(AActor* Target);
+	void ClearInvalidPlacementFeedback();
 	void SetHighlightIfPresent(AActor* Actor, bool bOn);
 	void SetHighlightStateIfPresent(AActor* Actor, EHighlightVisualState State);
 
@@ -56,10 +59,19 @@ private:
 	UPROPERTY()
 	TObjectPtr<AActor> CurrentTarget = nullptr;
 
+	UPROPERTY()
+	TObjectPtr<AActor> InvalidFeedbackTarget = nullptr;
+
+	EHighlightVisualState CurrentTargetState = EHighlightVisualState::None;
+
 	FTimerHandle HighlightTimerHandle;
+	FTimerHandle InvalidFeedbackTimerHandle;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Interaction")
 	float HoverPollInterval = 0.03f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Interaction", meta = (ClampMin = "0.0"))
+	float InvalidFeedbackDuration = 0.35f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Interaction", meta = (ClampMin = "0.0"))
 	float CursorTraceDistance = 100000.f;

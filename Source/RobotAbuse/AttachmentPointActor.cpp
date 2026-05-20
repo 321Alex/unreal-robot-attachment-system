@@ -1,6 +1,8 @@
 ﻿#include "AttachmentPointActor.h"
 
 #include "AttachablePart.h"
+#include "HighlightComponent.h"
+#include "HighlightStrategy_Emissive.h"
 
 #include "Components/ChildActorComponent.h"
 #include "Components/SceneComponent.h"
@@ -35,6 +37,14 @@ AAttachmentPointActor::AAttachmentPointActor()
 	// Optional: blueprint-configured initial part that starts attached at BeginPlay.
 	InitialPartChild = CreateDefaultSubobject<UChildActorComponent>(TEXT("InitialPartChild"));
 	InitialPartChild->SetupAttachment(SnapPoint);
+
+	Highlight = CreateDefaultSubobject<UHighlightComponent>(TEXT("Highlight"));
+	UHighlightStrategy_Emissive* HighlightStrategy = CreateDefaultSubobject<UHighlightStrategy_Emissive>(TEXT("HighlightStrategy"));
+	HighlightStrategy->EmissiveColorParameterName = "Color";
+	HighlightStrategy->bPulseHighlight = false;
+	HighlightStrategy->HoverColor = FLinearColor(0.0f, 0.35f, 1.0f);
+	HighlightStrategy->InvalidColor = FLinearColor(1.0f, 0.0f, 0.0f);
+	Highlight->Strategy = HighlightStrategy;
 }
 
 void AAttachmentPointActor::OnConstruction(const FTransform& Transform)

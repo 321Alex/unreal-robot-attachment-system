@@ -7,6 +7,7 @@
 
 class AAttachablePart;
 class UChildActorComponent;
+class UHighlightComponent;
 class USceneComponent;
 class USphereComponent;
 class UStaticMeshComponent;
@@ -57,6 +58,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
 	TObjectPtr<UChildActorComponent> InitialPartChild = nullptr;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
+	TObjectPtr<UHighlightComponent> Highlight = nullptr;
 
 	UPROPERTY(Transient)
 	TObjectPtr<AAttachablePart> AttachedPart = nullptr;

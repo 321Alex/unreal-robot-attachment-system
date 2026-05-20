@@ -6,6 +6,7 @@
 #include "Components/MeshComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
+#include "Math/UnrealMathUtility.h"
 
 // Emissive highlight strategy:
 // - Setup() scans static mesh materials and replaces any material that supports the emissive scalar parameter
@@ -56,6 +57,8 @@ void UHighlightStrategy_Emissive::Setup(AActor* Target)
 {
 	// Clear any previous references.
 	DynamicMaterials.Empty();
+	OriginalColors.Empty();
+	bHasColorParameter.Empty();
 	
 	TArray<UStaticMeshComponent*> MeshComponents;
 	Target->GetComponents<UStaticMeshComponent>(MeshComponents);
@@ -70,9 +73,11 @@ void UHighlightStrategy_Emissive::Setup(AActor* Target)
 			UMaterialInterface* BaseMat = Mesh->GetMaterial(i);
 			if (!BaseMat) continue;
 
+			const bool bHasScalar = MaterialHasScalarParam(BaseMat, EmissiveParameterName);
+			const bool bHasVector = MaterialHasVectorParam(BaseMat, EmissiveColorParameterName);
+
 			// Skip materials that don't have a highlight parameter we can drive.
-			if (!MaterialHasScalarParam(BaseMat, EmissiveParameterName) &&
-				!MaterialHasVectorParam(BaseMat, EmissiveColorParameterName))
+			if (!bHasScalar && !bHasVector)
 			{
 				continue;
 			}
@@ -83,6 +88,8 @@ void UHighlightStrategy_Emissive::Setup(AActor* Target)
 
 			Mesh->SetMaterial(i, DynMat);
 			DynamicMaterials.Add(DynMat);
+			OriginalColors.Add(bHasVector ? DynMat->K2_GetVectorParameterValue(EmissiveColorParameterName) : FLinearColor::White);
+			bHasColorParameter.Add(bHasVector);
 		}
 	}
 }
@@ -133,8 +140,9 @@ void UHighlightStrategy_Emissive::Apply(AActor* Target)
 
 void UHighlightStrategy_Emissive::Apply(AActor* Target, EHighlightVisualState State)
 {
-	const FLinearColor& Color = (State == EHighlightVisualState::Selected) ? SelectedColor : HoverColor;
-	SetEmissive(HighlightValue, &Color);
+	const FLinearColor Color = GetColorForState(State);
+	PulseTime = 0.0f;
+	SetEmissive(GetCurrentHighlightValue(), &Color);
 
 	if (!HighlightChildren) return;
 
@@ -163,6 +171,8 @@ void UHighlightStrategy_Emissive::Apply(AActor* Target, EHighlightVisualState St
 void UHighlightStrategy_Emissive::Clear(AActor* Target)
 {
 	SetEmissive(ClearValue);
+	RestoreOriginalColors();
+	PulseTime = 0.0f;
 
 	if (!HighlightChildren) return;
 
@@ -186,15 +196,78 @@ void UHighlightStrategy_Emissive::Clear(AActor* Target)
 	}
 }
 
+void UHighlightStrategy_Emissive::RestoreOriginalColors()
+{
+	for (int32 i = 0; i < DynamicMaterials.Num(); i++)
+	{
+		if (!bHasColorParameter.IsValidIndex(i) || !bHasColorParameter[i])
+		{
+			continue;
+		}
+
+		if (!OriginalColors.IsValidIndex(i))
+		{
+			continue;
+		}
+
+		if (UMaterialInstanceDynamic* Mat = DynamicMaterials[i])
+		{
+			Mat->SetVectorParameterValue(EmissiveColorParameterName, OriginalColors[i]);
+		}
+	}
+}
+
+void UHighlightStrategy_Emissive::TickHighlight(AActor* Target, EHighlightVisualState State, float DeltaTime)
+{
+	if (!bPulseHighlight)
+	{
+		return;
+	}
+
+	PulseTime += DeltaTime;
+	SetEmissive(GetCurrentHighlightValue());
+}
+
 void UHighlightStrategy_Emissive::SetEmissive(float Value, const FLinearColor* Color)
 {
 	// Drive the emissive parameters on all cached dynamic material instances.
-	for (UMaterialInstanceDynamic* Mat : DynamicMaterials)
+	for (int32 i = 0; i < DynamicMaterials.Num(); i++)
 	{
+		UMaterialInstanceDynamic* Mat = DynamicMaterials[i];
+		if (!Mat)
+		{
+			continue;
+		}
+
 		Mat->SetScalarParameterValue(EmissiveParameterName, Value);
-		if (Color)
+		if (Color && bHasColorParameter.IsValidIndex(i) && bHasColorParameter[i])
 		{
 			Mat->SetVectorParameterValue(EmissiveColorParameterName, *Color);
 		}
+	}
+}
+
+float UHighlightStrategy_Emissive::GetCurrentHighlightValue() const
+{
+	if (!bPulseHighlight)
+	{
+		return HighlightValue;
+	}
+
+	const float Alpha = (FMath::Sin(PulseTime * PulseSpeed) + 1.0f) * 0.5f;
+	return FMath::Lerp(PulseMinValue, PulseMaxValue, Alpha);
+}
+
+FLinearColor UHighlightStrategy_Emissive::GetColorForState(EHighlightVisualState State) const
+{
+	switch (State)
+	{
+	case EHighlightVisualState::Selected:
+		return SelectedColor;
+	case EHighlightVisualState::Invalid:
+		return InvalidColor;
+	case EHighlightVisualState::Hover:
+	default:
+		return HoverColor;
 	}
 }

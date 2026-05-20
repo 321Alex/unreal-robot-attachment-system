@@ -78,6 +78,7 @@ void URobotInteractionComponent::HandleNewClick(AActor* Actor, const FHitResult&
 			DraggedActor = Actor;
 			DragComp->BeginDrag(CachedPC, &Hit);
 			SetHighlightStateIfPresent(Actor, EHighlightVisualState::Selected);
+			StartHighlightTimer();
 
 			if (AAttachablePart* Part = Cast<AAttachablePart>(Actor))
 			{
@@ -116,6 +117,7 @@ void URobotInteractionComponent::BeginDraggingActor(AActor* Actor)
 	DragComp->BeginDrag(CachedPC);
 
 	SetHighlightStateIfPresent(Actor, EHighlightVisualState::Selected);
+	StartHighlightTimer();
 
 	if (AAttachablePart* Part = Cast<AAttachablePart>(Actor))
 	{
@@ -138,6 +140,8 @@ void URobotInteractionComponent::HandleDropOrAttach(const FHitResult& Hit)
 	{
 		if (Point->TryAttachPart(DraggedPart))
 		{
+			SetCurrentTarget(nullptr);
+
 			// End drag session on the part.
 			if (UDragComponent* DragComp = DraggedActor->FindComponentByClass<UDragComponent>())
 			{
@@ -159,6 +163,7 @@ void URobotInteractionComponent::HandleDropOrAttach(const FHitResult& Hit)
 		}
 
 		// Attach failed (wrong type, occupied, etc.) -> keep dragging.
+		ShowInvalidPlacementFeedback(Point);
 		return;
 	}
 
@@ -266,24 +271,37 @@ void URobotInteractionComponent::StopHighlightTimer()
 
 	if (CurrentTarget)
 	{
-		SetHighlightIfPresent(CurrentTarget, false);
+		SetHighlightStateIfPresent(CurrentTarget, EHighlightVisualState::None);
 	}
 
 	CurrentTarget = nullptr;
+	CurrentTargetState = EHighlightVisualState::None;
 }
 
 void URobotInteractionComponent::SetCurrentTarget(AActor* NewTarget)
 {
+	SetCurrentTarget(NewTarget, EHighlightVisualState::Hover);
+}
+
+void URobotInteractionComponent::SetCurrentTarget(AActor* NewTarget, EHighlightVisualState NewState)
+{
 	if (NewTarget == CurrentTarget)
 	{
+		if (CurrentTargetState != NewState)
+		{
+			CurrentTargetState = NewState;
+			SetHighlightStateIfPresent(CurrentTarget, CurrentTargetState);
+		}
+
 		return;
 	}
 
 	SetHighlightStateIfPresent(CurrentTarget, EHighlightVisualState::None);
 
 	CurrentTarget = NewTarget;
+	CurrentTargetState = NewTarget ? NewState : EHighlightVisualState::None;
 
-	SetHighlightStateIfPresent(CurrentTarget, EHighlightVisualState::Hover);
+	SetHighlightStateIfPresent(CurrentTarget, CurrentTargetState);
 
 	if (AAttachablePart* Part = Cast<AAttachablePart>(CurrentTarget))
 	{
@@ -297,18 +315,74 @@ void URobotInteractionComponent::SetCurrentTarget(AActor* NewTarget)
 
 void URobotInteractionComponent::UpdateCurrentTarget()
 {
-	if (!CachedPC || DraggedActor)
+	if (!CachedPC)
 	{
 		return;
 	}
 
 	FHitResult Hit;
-	CachedPC->GetHitResultUnderCursor(ECC_Visibility, false, Hit);
 
+	if (DraggedActor)
+	{
+		TraceUnderCursorIgnoringDraggedActor(Hit);
+
+		AAttachablePart* DraggedPart = Cast<AAttachablePart>(DraggedActor);
+		AAttachmentPointActor* Point = Cast<AAttachmentPointActor>(Hit.GetActor());
+
+		if (Point && DraggedPart)
+		{
+			const EHighlightVisualState PlacementState = Point->CanAcceptPart(DraggedPart)
+				? EHighlightVisualState::Hover
+				: EHighlightVisualState::Invalid;
+			SetCurrentTarget(Point, PlacementState);
+			return;
+		}
+
+		SetCurrentTarget(nullptr);
+		return;
+	}
+
+	CachedPC->GetHitResultUnderCursor(ECC_Visibility, false, Hit);
 	AActor* HitActor = Hit.GetActor();
 	AActor* NewTarget = (HitActor && HitActor->Implements<UInteractable>()) ? HitActor : nullptr;
 
 	SetCurrentTarget(NewTarget);
+}
+
+void URobotInteractionComponent::ShowInvalidPlacementFeedback(AActor* Target)
+{
+	if (!Target || !GetWorld())
+	{
+		return;
+	}
+
+	ClearInvalidPlacementFeedback();
+	SetCurrentTarget(nullptr);
+
+	InvalidFeedbackTarget = Target;
+	SetHighlightStateIfPresent(InvalidFeedbackTarget, EHighlightVisualState::Invalid);
+
+	GetWorld()->GetTimerManager().SetTimer(
+		InvalidFeedbackTimerHandle,
+		this,
+		&URobotInteractionComponent::ClearInvalidPlacementFeedback,
+		InvalidFeedbackDuration,
+		false
+	);
+}
+
+void URobotInteractionComponent::ClearInvalidPlacementFeedback()
+{
+	if (GetWorld())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(InvalidFeedbackTimerHandle);
+	}
+
+	if (InvalidFeedbackTarget)
+	{
+		SetHighlightStateIfPresent(InvalidFeedbackTarget, EHighlightVisualState::None);
+		InvalidFeedbackTarget = nullptr;
+	}
 }
 
 void URobotInteractionComponent::SetHighlightIfPresent(AActor* Actor, bool bOn)

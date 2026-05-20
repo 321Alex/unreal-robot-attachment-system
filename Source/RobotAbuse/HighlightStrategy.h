@@ -9,7 +9,8 @@ enum class EHighlightVisualState : uint8
 {
 	None,
 	Hover,
-	Selected
+	Selected,
+	Invalid
 };
 
 // Strategy interface for highlight behavior.
@@ -27,5 +28,6 @@ public:
 	
 	virtual void Apply(AActor* Target) PURE_VIRTUAL(UHighlightStrategy::Apply, );
 	virtual void Apply(AActor* Target, EHighlightVisualState State) { Apply(Target); }
+	virtual void TickHighlight(AActor* Target, EHighlightVisualState State, float DeltaTime) {}
 	virtual void Clear(AActor* Target) PURE_VIRTUAL(UHighlightStrategy::Clear, );
 };

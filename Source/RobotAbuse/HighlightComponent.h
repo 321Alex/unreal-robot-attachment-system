@@ -13,6 +13,8 @@ class ROBOTABUSE_API UHighlightComponent : public UActorComponent
 	GENERATED_BODY()
 
 public:
+	UHighlightComponent();
+
 	// Pluggable highlight behavior (instanced per component).
 	UPROPERTY(EditAnywhere, Instanced, Category="Highlight")
 	TObjectPtr<UHighlightStrategy> Strategy = nullptr;
@@ -31,6 +33,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 private:
 	UPROPERTY(VisibleInstanceOnly, Category="Highlight")
