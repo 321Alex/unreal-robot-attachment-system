@@ -20,14 +20,11 @@ void UHighlightComponent::BeginPlay()
 
 void UHighlightComponent::SetHighlighted(bool bHighlighted)
 {
-	// Avoid redundant work when the requested state matches the current state.
-	if (bIsHighlighted == bHighlighted)
-	{
-		return;
-	}
+	SetHighlightState(bHighlighted ? EHighlightVisualState::Hover : EHighlightVisualState::None);
+}
 
-	bIsHighlighted = bHighlighted;
-
+void UHighlightComponent::SetHighlightState(EHighlightVisualState NewState)
+{
 	AActor* Owner = GetOwner();
 
 	// Missing strategy is a configuration error; we log once per call site via ensure.
@@ -37,9 +34,16 @@ void UHighlightComponent::SetHighlighted(bool bHighlighted)
 		return;
 	}
 
-	if (bIsHighlighted)
+	if (HighlightState == NewState)
 	{
-		Strategy->Apply(Owner);
+		return;
+	}
+
+	HighlightState = NewState;
+
+	if (HighlightState != EHighlightVisualState::None)
+	{
+		Strategy->Apply(Owner, HighlightState);
 	}
 	else
 	{

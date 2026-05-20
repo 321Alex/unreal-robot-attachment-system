@@ -6,6 +6,7 @@
 
 class AAttachablePart;
 class APlayerController;
+enum class EHighlightVisualState : uint8;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPartStateChanged, AAttachablePart*, Part);
 
@@ -43,6 +44,7 @@ private:
 	void UpdateCurrentTarget();
 	void SetCurrentTarget(AActor* NewTarget);
 	void SetHighlightIfPresent(AActor* Actor, bool bOn);
+	void SetHighlightStateIfPresent(AActor* Actor, EHighlightVisualState State);
 
 private:
 	UPROPERTY()

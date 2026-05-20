@@ -17,7 +17,16 @@ public:
 	FName EmissiveParameterName = "EmissiveStrength";
 
 	UPROPERTY(EditAnywhere, Category="Highlight")
+	FName EmissiveColorParameterName = "EmissiveColor";
+
+	UPROPERTY(EditAnywhere, Category="Highlight")
 	float HighlightValue = 5.0f;
+
+	UPROPERTY(EditAnywhere, Category="Highlight")
+	FLinearColor HoverColor = FLinearColor(0.0f, 0.35f, 1.0f);
+
+	UPROPERTY(EditAnywhere, Category="Highlight")
+	FLinearColor SelectedColor = FLinearColor(1.0f, 0.85f, 0.0f);
 
 	UPROPERTY(EditAnywhere, Category="Highlight")
 	float ClearValue = 0.0f;
@@ -31,13 +40,15 @@ public:
 
 	virtual void Setup(AActor* Target) override;
 	virtual void Apply(AActor* Target) override;
+	virtual void Apply(AActor* Target, EHighlightVisualState State) override;
 	virtual void Clear(AActor* Target) override;
 
 private:
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UMaterialInstanceDynamic>> DynamicMaterials;
 
-	void SetEmissive(float Value);
+	void SetEmissive(float Value, const FLinearColor* Color = nullptr);
 
 	static bool MaterialHasScalarParam(UMaterialInterface* Mat, FName ParamName);
+	static bool MaterialHasVectorParam(UMaterialInterface* Mat, FName ParamName);
 };

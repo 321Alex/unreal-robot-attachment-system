@@ -4,6 +4,14 @@
 #include "UObject/Object.h"
 #include "HighlightStrategy.generated.h"
 
+UENUM(BlueprintType)
+enum class EHighlightVisualState : uint8
+{
+	None,
+	Hover,
+	Selected
+};
+
 // Strategy interface for highlight behavior.
 // Lifecycle:
 // - Setup() called once (cache materials/components/etc.)
@@ -18,5 +26,6 @@ public:
 	virtual void Setup(AActor* Target) {}
 	
 	virtual void Apply(AActor* Target) PURE_VIRTUAL(UHighlightStrategy::Apply, );
+	virtual void Apply(AActor* Target, EHighlightVisualState State) { Apply(Target); }
 	virtual void Clear(AActor* Target) PURE_VIRTUAL(UHighlightStrategy::Clear, );
 };

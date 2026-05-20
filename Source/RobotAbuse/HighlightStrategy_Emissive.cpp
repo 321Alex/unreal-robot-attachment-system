@@ -33,6 +33,25 @@ bool UHighlightStrategy_Emissive::MaterialHasScalarParam(UMaterialInterface* Mat
 	return false;
 }
 
+bool UHighlightStrategy_Emissive::MaterialHasVectorParam(UMaterialInterface* Mat, FName ParamName)
+{
+	if (!Mat) return false;
+
+	TArray<FMaterialParameterInfo> Infos;
+	TArray<FGuid> Ids;
+	Mat->GetAllVectorParameterInfo(Infos, Ids);
+
+	for (const FMaterialParameterInfo& Info : Infos)
+	{
+		if (Info.Name == ParamName)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void UHighlightStrategy_Emissive::Setup(AActor* Target)
 {
 	// Clear any previous references.
@@ -51,8 +70,9 @@ void UHighlightStrategy_Emissive::Setup(AActor* Target)
 			UMaterialInterface* BaseMat = Mesh->GetMaterial(i);
 			if (!BaseMat) continue;
 
-			// Skip materials that don't have the emissive scalar parameter.
-			if (!MaterialHasScalarParam(BaseMat, EmissiveParameterName))
+			// Skip materials that don't have a highlight parameter we can drive.
+			if (!MaterialHasScalarParam(BaseMat, EmissiveParameterName) &&
+				!MaterialHasVectorParam(BaseMat, EmissiveColorParameterName))
 			{
 				continue;
 			}
@@ -108,7 +128,13 @@ static void GetHighlightChildActors(AActor* Root, TArray<AActor*>& OutActors)
 
 void UHighlightStrategy_Emissive::Apply(AActor* Target)
 {
-	SetEmissive(HighlightValue);
+	Apply(Target, EHighlightVisualState::Hover);
+}
+
+void UHighlightStrategy_Emissive::Apply(AActor* Target, EHighlightVisualState State)
+{
+	const FLinearColor& Color = (State == EHighlightVisualState::Selected) ? SelectedColor : HoverColor;
+	SetEmissive(HighlightValue, &Color);
 
 	if (!HighlightChildren) return;
 
@@ -129,7 +155,7 @@ void UHighlightStrategy_Emissive::Apply(AActor* Target)
 		// Only toggle highlight on actors that participate in the highlight system.
 		if (UHighlightComponent* Highlight = Child->FindComponentByClass<UHighlightComponent>())
 		{
-			Highlight->SetHighlighted(true);
+			Highlight->SetHighlightState(State);
 		}
 	}
 }
@@ -160,11 +186,15 @@ void UHighlightStrategy_Emissive::Clear(AActor* Target)
 	}
 }
 
-void UHighlightStrategy_Emissive::SetEmissive(float Value)
+void UHighlightStrategy_Emissive::SetEmissive(float Value, const FLinearColor* Color)
 {
-	// Drive the emissive scalar parameter on all cached dynamic material instances.
+	// Drive the emissive parameters on all cached dynamic material instances.
 	for (UMaterialInstanceDynamic* Mat : DynamicMaterials)
 	{
 		Mat->SetScalarParameterValue(EmissiveParameterName, Value);
+		if (Color)
+		{
+			Mat->SetVectorParameterValue(EmissiveColorParameterName, *Color);
+		}
 	}
 }

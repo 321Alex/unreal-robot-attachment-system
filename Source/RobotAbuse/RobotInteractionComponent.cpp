@@ -77,7 +77,7 @@ void URobotInteractionComponent::HandleNewClick(AActor* Actor, const FHitResult&
 		{
 			DraggedActor = Actor;
 			DragComp->BeginDrag(CachedPC, &Hit);
-			SetHighlightIfPresent(Actor, true);
+			SetHighlightStateIfPresent(Actor, EHighlightVisualState::Selected);
 
 			if (AAttachablePart* Part = Cast<AAttachablePart>(Actor))
 			{
@@ -115,7 +115,7 @@ void URobotInteractionComponent::BeginDraggingActor(AActor* Actor)
 
 	DragComp->BeginDrag(CachedPC);
 
-	SetHighlightIfPresent(Actor, true);
+	SetHighlightStateIfPresent(Actor, EHighlightVisualState::Selected);
 
 	if (AAttachablePart* Part = Cast<AAttachablePart>(Actor))
 	{
@@ -279,11 +279,11 @@ void URobotInteractionComponent::SetCurrentTarget(AActor* NewTarget)
 		return;
 	}
 
-	SetHighlightIfPresent(CurrentTarget, false);
+	SetHighlightStateIfPresent(CurrentTarget, EHighlightVisualState::None);
 
 	CurrentTarget = NewTarget;
 
-	SetHighlightIfPresent(CurrentTarget, true);
+	SetHighlightStateIfPresent(CurrentTarget, EHighlightVisualState::Hover);
 
 	if (AAttachablePart* Part = Cast<AAttachablePart>(CurrentTarget))
 	{
@@ -313,6 +313,11 @@ void URobotInteractionComponent::UpdateCurrentTarget()
 
 void URobotInteractionComponent::SetHighlightIfPresent(AActor* Actor, bool bOn)
 {
+	SetHighlightStateIfPresent(Actor, bOn ? EHighlightVisualState::Hover : EHighlightVisualState::None);
+}
+
+void URobotInteractionComponent::SetHighlightStateIfPresent(AActor* Actor, EHighlightVisualState State)
+{
 	if (!Actor)
 	{
 		return;
@@ -320,6 +325,6 @@ void URobotInteractionComponent::SetHighlightIfPresent(AActor* Actor, bool bOn)
 
 	if (UHighlightComponent* Highlight = Actor->FindComponentByClass<UHighlightComponent>())
 	{
-		Highlight->SetHighlighted(bOn);
+		Highlight->SetHighlightState(State);
 	}
 }
