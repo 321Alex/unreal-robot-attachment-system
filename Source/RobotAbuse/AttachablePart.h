@@ -70,7 +70,11 @@ protected:
 
 private:
 	void PickUp();
+	void SetInteractionTraceBlocked(bool bBlocked);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<AAttachmentPointActor> CurrentAttachmentPoint = nullptr;
+
+	ECollisionResponse SavedVisibilityResponse = ECR_Block;
+	bool bHasSavedVisibilityResponse = false;
 };

@@ -11,7 +11,7 @@ UDragComponent::UDragComponent()
 	SetComponentTickEnabled(false);
 }
 
-void UDragComponent::BeginDrag(APlayerController* PC)
+void UDragComponent::BeginDrag(APlayerController* PC, const FHitResult* GrabHit)
 {
 	check(PC);
 	AActor* Owner = GetOwner();
@@ -19,12 +19,20 @@ void UDragComponent::BeginDrag(APlayerController* PC)
 
 	DragController = PC;
 
-	// Cache the camera-to-object distance at drag start so we can keep the object locked to the mouse ray at a stable depth 
+	FVector GrabWorldLocation = Owner->GetActorLocation();
+	if (GrabHit && GrabHit->bBlockingHit && GrabHit->GetActor() == Owner)
+	{
+		GrabWorldLocation = GrabHit->ImpactPoint;
+	}
+
+	GrabOffsetLocal = Owner->GetActorTransform().InverseTransformPosition(GrabWorldLocation);
+
+	// Cache the camera-to-grab-point distance so the clicked spot stays locked to the mouse ray.
 	FVector CamLoc;
 	FRotator CamRot;
 	PC->GetPlayerViewPoint(CamLoc, CamRot);
 
-	InitialDragDistance = FVector::Dist(CamLoc, Owner->GetActorLocation());
+	InitialDragDistance = FVector::Dist(CamLoc, GrabWorldLocation);
 
 	InitialDragDistance = FMath::Clamp(InitialDragDistance, MinDragDistance, MaxDragDistance);
 
@@ -53,16 +61,21 @@ void UDragComponent::TickComponent(
 		return;
 	}
 
-	// Project a point along the mouse ray at the cached distance.
-	const FVector RawWorldPos = MouseWorldOrigin + (MouseWorldDir * InitialDragDistance);
+	// Project the original grabbed point along the mouse ray at the cached distance.
+	const FVector GrabWorldPos = MouseWorldOrigin + (MouseWorldDir * InitialDragDistance);
 
-	ApplyWorldPosition(RawWorldPos, DeltaTime);
+	if (AActor* Owner = GetOwner())
+	{
+		const FVector TargetActorLocation = GrabWorldPos - Owner->GetActorTransform().TransformVector(GrabOffsetLocal);
+		ApplyWorldPosition(TargetActorLocation, DeltaTime);
+	}
 }
 
 void UDragComponent::EndDrag()
 {
 	bDragging = false;
 	InitialDragDistance = 0.f;
+	GrabOffsetLocal = FVector::ZeroVector;
 	DragController = nullptr;
 
 	SetComponentTickEnabled(false);
@@ -70,7 +83,7 @@ void UDragComponent::EndDrag()
 
 void UDragComponent::ApplyWorldPosition(const FVector& WorldPos, float DeltaTime)
 {
-	// Apply optional offset because the mesh pivot/config may not line up directly under the cursor.
+	// Apply optional designer offset after the automatic grab-point correction.
 	const FVector TargetPos = bUseOffset ? (WorldPos + DragOffset) : WorldPos;
 
 	if (AActor* Owner = GetOwner())

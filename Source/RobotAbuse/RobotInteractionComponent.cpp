@@ -9,6 +9,7 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "TimerManager.h"
+#include "Engine/World.h"
 
 URobotInteractionComponent::URobotInteractionComponent()
 {
@@ -33,23 +34,25 @@ void URobotInteractionComponent::OnMouseClick()
 	}
 
 	FHitResult Hit;
-	CachedPC->GetHitResultUnderCursor(ECC_Visibility, false, Hit);
 
 	// If already dragging something, clicking will either attach to a socket or drop.
 	if (DraggedActor)
 	{
+		TraceUnderCursorIgnoringDraggedActor(Hit);
 		HandleDropOrAttach(Hit);
 		return;
 	}
 
+	CachedPC->GetHitResultUnderCursor(ECC_Visibility, false, Hit);
+
 	// Not dragging -> tell the clicked actor it was interacted with.
 	if (AActor* HitActor = Hit.GetActor())
 	{
-		HandleNewClick(HitActor);
+		HandleNewClick(HitActor, Hit);
 	}
 }
 
-void URobotInteractionComponent::HandleNewClick(AActor* Actor)
+void URobotInteractionComponent::HandleNewClick(AActor* Actor, const FHitResult& Hit)
 {
 	if (!Actor)
 	{
@@ -73,7 +76,7 @@ void URobotInteractionComponent::HandleNewClick(AActor* Actor)
 		if (UDragComponent* DragComp = Actor->FindComponentByClass<UDragComponent>())
 		{
 			DraggedActor = Actor;
-			DragComp->BeginDrag(CachedPC);
+			DragComp->BeginDrag(CachedPC, &Hit);
 			SetHighlightIfPresent(Actor, true);
 
 			if (AAttachablePart* Part = Cast<AAttachablePart>(Actor))
@@ -193,6 +196,38 @@ void URobotInteractionComponent::EndDragAndResumeHover(bool bClearDraggedHighlig
 	DraggedActor = nullptr;
 
 	StartHighlightTimer();
+}
+
+bool URobotInteractionComponent::TraceUnderCursorIgnoringDraggedActor(FHitResult& OutHit) const
+{
+	OutHit = FHitResult();
+
+	if (!CachedPC || !GetWorld())
+	{
+		return false;
+	}
+
+	FVector MouseWorldOrigin;
+	FVector MouseWorldDirection;
+	if (!CachedPC->DeprojectMousePositionToWorld(MouseWorldOrigin, MouseWorldDirection))
+	{
+		return false;
+	}
+
+	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(RobotDragPlacementTrace), false);
+	if (DraggedActor)
+	{
+		QueryParams.AddIgnoredActor(DraggedActor);
+	}
+
+	const FVector TraceEnd = MouseWorldOrigin + (MouseWorldDirection * CursorTraceDistance);
+	return GetWorld()->LineTraceSingleByChannel(
+		OutHit,
+		MouseWorldOrigin,
+		TraceEnd,
+		ECC_Visibility,
+		QueryParams
+	);
 }
 
 void URobotInteractionComponent::StartHighlightTimer()

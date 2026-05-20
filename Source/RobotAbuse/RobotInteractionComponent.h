@@ -34,8 +34,9 @@ public:
 	FOnPartStateChanged OnPartStateChanged;
 
 private:
-	void HandleNewClick(AActor* Actor);
+	void HandleNewClick(AActor* Actor, const FHitResult& Hit);
 	void HandleDropOrAttach(const FHitResult& Hit);
+	bool TraceUnderCursorIgnoringDraggedActor(FHitResult& OutHit) const;
 
 	void StartHighlightTimer();
 	void StopHighlightTimer();
@@ -57,4 +58,7 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Interaction")
 	float HoverPollInterval = 0.03f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Interaction", meta = (ClampMin = "0.0"))
+	float CursorTraceDistance = 100000.f;
 };

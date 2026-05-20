@@ -98,6 +98,11 @@ void AAttachmentPointActor::RegisterInitialPartIfAny()
 
 bool AAttachmentPointActor::CanAcceptPart(AAttachablePart* Part) const
 {
+	if (!Part)
+	{
+		return false;
+	}
+
 	if (!IsAvailable())
 	{
 		return false;

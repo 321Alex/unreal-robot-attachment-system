@@ -41,11 +41,13 @@ EInteractionOutcome AAttachablePart::OnInteract_Implementation()
 void AAttachablePart::PickUp()
 {
 	CurrentState = EPartState::HELD;
+	SetInteractionTraceBlocked(false);
 }
 
 void AAttachablePart::Drop()
 {
 	CurrentState = EPartState::DETACHED;
+	SetInteractionTraceBlocked(true);
 }
 
 void AAttachablePart::OnAttachToPoint(AAttachmentPointActor* Point)
@@ -53,6 +55,7 @@ void AAttachablePart::OnAttachToPoint(AAttachmentPointActor* Point)
 	// Track the attachment point we are currently anchored to.
 	CurrentAttachmentPoint = Point;
 	CurrentState = EPartState::ATTACHED;
+	SetInteractionTraceBlocked(true);
 }
 
 void AAttachablePart::OnDetachFromPoint()
@@ -72,4 +75,31 @@ void AAttachablePart::RequestDetachFromPoint()
 	// then clear our local attachment reference/state.
 	CurrentAttachmentPoint->DetachPart(this);
 	OnDetachFromPoint();
+}
+
+void AAttachablePart::SetInteractionTraceBlocked(bool bBlocked)
+{
+	if (!MeshComponent)
+	{
+		return;
+	}
+
+	if (bBlocked)
+	{
+		if (bHasSavedVisibilityResponse)
+		{
+			MeshComponent->SetCollisionResponseToChannel(ECC_Visibility, SavedVisibilityResponse);
+			bHasSavedVisibilityResponse = false;
+		}
+
+		return;
+	}
+
+	if (!bHasSavedVisibilityResponse)
+	{
+		SavedVisibilityResponse = MeshComponent->GetCollisionResponseToChannel(ECC_Visibility);
+		bHasSavedVisibilityResponse = true;
+	}
+
+	MeshComponent->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 }

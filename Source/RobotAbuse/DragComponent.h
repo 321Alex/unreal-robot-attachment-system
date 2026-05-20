@@ -14,7 +14,7 @@ class ROBOTABUSE_API UDragComponent : public UActorComponent
 public:
 	UDragComponent();
 
-	void BeginDrag(APlayerController* PC);
+	void BeginDrag(APlayerController* PC, const FHitResult* GrabHit = nullptr);
 	void EndDrag();
 
 protected:
@@ -34,7 +34,10 @@ private:
 	UPROPERTY()
 	float InitialDragDistance = 0.f;
 
-	// Offset so the object can appear under the cursor even if its pivot is not centered, have not configured this yet.
+	UPROPERTY()
+	FVector GrabOffsetLocal = FVector::ZeroVector;
+
+	// Optional fine tuning on top of the automatic grab-point offset.
 	UPROPERTY(EditAnywhere, Category="Drag")
 	bool bUseOffset = false;
 
