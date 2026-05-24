@@ -118,13 +118,7 @@ bool AAttachmentPointActor::CanAcceptPart(AAttachablePart* Part) const
 		return false;
 	}
 
-	// Universal parts fit anywhere; universal sockets accept anything.
-	if (AcceptedArmType == EPartType::Universal || Part->PartType == EPartType::Universal)
-	{
-		return true;
-	}
-
-	return AcceptedArmType == Part->PartType;
+	return ArePartTypesCompatible(AcceptedArmType, Part->PartType);
 }
 
 bool AAttachmentPointActor::TryAttachPart(AAttachablePart* Part)
