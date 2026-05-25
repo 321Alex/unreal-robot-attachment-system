@@ -36,8 +36,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Attachment")
 	bool DetachPart(AAttachablePart* Part);
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attachment", meta=(AllowPrivateAccess="true"))
-	EPartType AcceptedArmType = EPartType::Universal;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attachment", meta=(AllowPrivateAccess="true", FormerlySerializedAs="AcceptedArmType"))
+	EPartType AcceptedPartType = EPartType::Universal;
 
 protected:
 	virtual void OnConstruction(const FTransform& Transform) override;

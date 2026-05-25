@@ -118,7 +118,7 @@ bool AAttachmentPointActor::CanAcceptPart(AAttachablePart* Part) const
 		return false;
 	}
 
-	return ArePartTypesCompatible(AcceptedArmType, Part->PartType);
+	return ArePartTypesCompatible(AcceptedPartType, Part->PartType);
 }
 
 bool AAttachmentPointActor::TryAttachPart(AAttachablePart* Part)
